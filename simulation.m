@@ -22,23 +22,24 @@ gidx = 1; % index for initial guess
 rad = zeros(length(xRx)); % Distances between each Rx and the Tx. To be filled with values from Friis eqn
 figure(1)
 for i = 1:length(t)
-    % Estimate object position
+    % Estimate and plot object position
     rad(1) = pythag([xRx(1) yRx(1)], [x(i) y(i)]);
     rad(2) = pythag([xRx(2) yRx(2)], [x(i) y(i)]);
     rad(3) = pythag([xRx(3) yRx(3)], [x(i) y(i)]);
     sol = fsolve(@(pos) solvesys(pos, xRx, yRx, rad), [xRx(gidx) yRx(gidx)]); % estimated positon
+    plot(sol(1), sol(2), "b+", "markersize", 5)
 
     % Verify estimation's accuracy
     assert(isInTolerance(x(i), sol(1), tol))
     assert(isInTolerance(y(i), sol(2), tol))
 
-    % Plot object position
-    plot(sol(1), sol(2), "b+", "markersize", 5)
+    % Plot object's exact position
     hold on
     plot(x(i), y(i), "ro", "markersize", 5)
 
     % Format graph
     title("Animation of object's exact and estimated positions")
+    legend(["Estimated position", "Exact position"], "Location", "northwest")
     axis([0, xMax, 0, yMax])
     grid on
     hold off
