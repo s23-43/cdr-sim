@@ -1,11 +1,14 @@
 clear;clc
 
 %% Set initial values
+tol = 0.05; % estimation tolerance
+
+%% Set Tx values
 t = 1:100; % time
 x = t; % x-coord of Tx
 y = 9*t.^0.5; % y-coord of Tx
-xMax = max(x, [], "all");
-yMax = max(y, [], "all");
+xMax = max(x, [], "all"); % largest x-coord
+yMax = max(y, [], "all"); % largest y-coord
 assert(length(t) == length(x))
 assert(length(t) == length(y))
 
@@ -19,18 +22,23 @@ gidx = 1; % index for initial guess
 rad = zeros(length(xRx)); % Distances between each Rx and the Tx. To be filled with values from Friis eqn
 figure(1)
 for i = 1:length(t)
-    % Calculate and estimate object position
+    % Estimate object position
     rad(1) = pythag([xRx(1) yRx(1)], [x(i) y(i)]);
     rad(2) = pythag([xRx(2) yRx(2)], [x(i) y(i)]);
     rad(3) = pythag([xRx(3) yRx(3)], [x(i) y(i)]);
-    sol = fsolve(@(pos) solvesys(pos, xRx, yRx, rad), [xRx(gidx) yRx(gidx)])
-    plot(sol(1), sol(2), "b+", "markersize", 5)
+    sol = fsolve(@(pos) solvesys(pos, xRx, yRx, rad), [xRx(gidx) yRx(gidx)]); % estimated positon
+
+    % Verify estimation's accuracy
+    assert(isInTolerance(x(i), sol(1), tol))
+    assert(isInTolerance(y(i), sol(2), tol))
 
     % Plot object position
-    plot(x(i), y(i), "rx", "markersize", 5)
+    plot(sol(1), sol(2), "b+", "markersize", 5)
+    hold on
+    plot(x(i), y(i), "ro", "markersize", 5)
 
     % Format graph
-    title("Animation of moving object")
+    title("Animation of object's exact and estimated positions")
     axis([0, xMax, 0, yMax])
     grid on
     hold off
@@ -52,8 +60,20 @@ function posTx = solvesys(pc, x, y, d)
 end
 
 %% Pythagorian theorem
+%  @param a - 1st point (2D vector)
+%  @param b - 2nd point (2D vector)
 function h = pythag(a, b)
     dx = a(1) - b(1);
     dy = a(2) - b(2);
     h = sqrt(dx^2 + dy^2);
+end
+
+%% Tolerance checker
+%  @param ref - expected value
+%  @param val - estimated value
+%  @param tol - tolerance (%)
+function t = isInTolerance(ref, val, tol)
+    lower = (val * (1 - tol)) <= ref;
+    upper = ref <= (val * (1 + tol));
+    t = lower && upper;
 end
